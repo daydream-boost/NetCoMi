@@ -612,7 +612,7 @@ netConstruct <- function(data,
 
     #---------------------------------------------------------------------------
     # handle phyloseq objects
-
+    
     if("phyloseq" %in% class(data)){
       
       otutab <- data@otu_table
@@ -636,18 +636,40 @@ netConstruct <- function(data,
         colnames(data) <- taxtab[, taxRank]
       }
     } else{
+      if(is.null(rownames(data))){
+        message("Row names are numbered because sample names were missing.\n")
+        rownames(data) <- 1:nrow(data)
+      }
+      
+      if(is.null(colnames(data))){
+        message("Column names are numbered because taxa names were missing.\n")
+        colnames(data) <- 1:ncol(data)
+      }
+      
       if(identical(colnames(data), rownames(data))) {
         warning(paste0("Row names and column names of 'data' are equal. ",
                        "Ensure 'data' is a count matrix."))
       }
     }
     
-    if(!is.null(data2) && "phyloseq" %in% class(data2)){
-      otutab <- data2@otu_table
-      if(attributes(otutab)$taxa_are_rows){
-        data2 <- t(otutab@.Data)
-      } else{
-        data2 <- otutab@.Data
+    if(!is.null(data2)){
+      if("phyloseq" %in% class(data2)){
+        otutab <- data2@otu_table
+        if(attributes(otutab)$taxa_are_rows){
+          data2 <- t(otutab@.Data)
+        } else{
+          data2 <- otutab@.Data
+        }
+      }
+      
+      if(is.null(rownames(data2))){
+        message("Row names of 'data2' are numbered because sample names were missing.\n")
+        rownames(data2) <- 1:nrow(data2)
+      }
+      
+      if(is.null(colnames(data2))){
+        message("Column names of 'data2' are numbered because taxa names were missing.\n")
+        colnames(data2) <- 1:ncol(data2)
       }
       
       if(identical(colnames(data2), rownames(data2))) {
@@ -655,6 +677,8 @@ netConstruct <- function(data,
                        "Ensure 'data2' is a count matrix."))
       }
     }
+      
+
     
     #---------------------------------------------------------------------------
 
