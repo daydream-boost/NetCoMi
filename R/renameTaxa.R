@@ -4,8 +4,8 @@
 #'   given as matrix or phyloseq object. \cr\cr
 #'   It comes with functionality for making unknown 
 #'   and unclassified taxa unique and substituting them by the next higher known
-#'   taxonomic level, e.g., an unknown genus "g__" is renamed to 
-#'   "1_Streptococcaceae(F)".
+#'   taxonomic level, e.g., an unknown genus "g__" can automatically be renamed 
+#'   to "1_Streptococcaceae(F)".
 #'   User-defined patterns determine the format of known and substituted names. 
 #'   Unknown names (e.g., NAs) and unclassified taxa can be 
 #'   handled separately. Duplicated names within one or more chosen ranks can 
@@ -50,17 +50,19 @@
 #'   numbers, add "unclassified" (or the appropriate counterpart) to 
 #'   \code{unknown} and set \code{unclass} to \code{NULL}.
 #' @param numUnclass logical. If \code{TRUE}, a number is assigned to all 
-#'   unclassified taxa (defined by \code{unclass}) to make them unique.
+#'   unclassified taxa (defined by \code{unclass}) to make them unique. 
+#'   The pattern is defined via \code{numUnclassPat}.
 #' @param numUnclassPat character defining the pattern used for numbering 
 #'   unclassified taxa. Must include a space holder for the name ("<name>") and
-#'   one for the number ("<num>"). Default is "<name><num>", resulting e.g. in
+#'   one for the number ("<num>"). Default is "<name><num>" resulting e.g., in
 #'   "unclassified1".
-#' @param numDupli logical indicating whether duplicates (within a rank) should
-#'   be made unique by adding a number
+#' @param numDupli character vector giving the ranks that should be made unique 
+#'   by adding a number. Elements must match column names. The pattern is 
+#'   defined via \code{numDupliPat}.
 #' @param numDupliPat character defining the pattern used for numbering 
-#'   duplicated names (if \code{numDupli = TRUE}). Must include a space holder 
+#'   duplicated names (if \code{numDupli} is given). Must include a space holder 
 #'   for the name ("<name>") and one for the number ("<num>"). 
-#'   Default is "<name><num>", resulting e.g. in "Ruminococcus1".
+#'   Default is "<name><num>" resulting e.g., in "Ruminococcus1".
 #' @param ranks character vector giving rank names used for renaming the 
 #'   taxa. If \code{NULL}, the functions tries to automatically set rank names
 #'   based on common usage.
@@ -69,8 +71,8 @@
 #'   (the former two in lower case and the latter two in upper case). 
 #'   If \code{NULL}, the first letter of the rank names is used.
 #' @param ignoreCols numeric vector with columns to be ignored. Names remain
-#'   unchanged for these columns. Columns containing NAs only are ignored
-#'   automatically, if \code{ignoreCols = NULL}. 
+#'   unchanged for these columns. Columns containing \code{NA}s are ignored 
+#'   automatically only if \code{ignoreCols = NULL}. 
 #'   Note: length of \code{ranks} and \code{ranksAbb} must 
 #'   match the number of non-ignored columns.
 #' @return Renamed taxonomic table (matrix or phyloseq object, depending on the 
@@ -242,47 +244,47 @@ renameTaxa <- function(taxtab,
                          numDupli = NULL,
                          numDupliPat = "<name><num>",
                          ranks = NULL, ranksAbb = NULL, 
-                         ignoreCols = NULL){
+                         ignoreCols = NULL) {
 
   stopifnot(is.character(pat))
   stopifnot(is.character(substPat))
   stopifnot(is.logical(numUnknown))
   stopifnot(is.logical(numUnclass))
   
-  if("phyloseq" %in% class(taxtab)){
+  if ("phyloseq" %in% class(taxtab)) {
     tax <- as.matrix(taxtab@tax_table@.Data)
-  } else{
+  } else {
     tax <- as.matrix(taxtab)
   }
   
   # Input check for numUnclass and numDupli
   
-  if(numUnclass){
-    if(!grepl("<name>", numUnclassPat)){
+  if (numUnclass) {
+    if (!grepl("<name>", numUnclassPat)) {
       stop('Argument "numUnclassPat" must contain a space holder "<name>".')
     }
-    if(!grepl("<num>", numUnclassPat)){
+    if (!grepl("<num>", numUnclassPat)) {
       stop('Argument "numUnclassPat" must contain a space holder "<num>".')
     }
   }
   
-  if(!is.null(numDupli)){
-    if(!all(numDupli %in% colnames(tax))){
+  if (!is.null(numDupli)) {
+    if (!all(numDupli %in% colnames(tax))) {
       stop('Ranks given with "numDupli" must match column names of taxonomic table.')
     }
     
-    if(!grepl("<name>", numDupliPat)){
+    if (!grepl("<name>", numDupliPat)) {
       stop('Argument "numDupliPat" must contain a space holder "<name>".')
     }
     
-    if(!grepl("<num>", numDupliPat)){
+    if (!grepl("<num>", numDupliPat)) {
       stop('Argument "numDupliPat" must contain a space holder "<num>".')
     }
   }
 
   # Remove columns to ignore
-  if(!is.null(ignoreCols)){
-    if(is.character(ignoreCols)){
+  if (!is.null(ignoreCols)) {
+    if (is.character(ignoreCols)) {
       ignoreCols <- which(colnames(tax) %in% ignoreCols)
     }
     
@@ -290,10 +292,10 @@ renameTaxa <- function(taxtab,
     # Ignore columns that contain NAs only
     ignore.tmp <- which(apply(tax, 2, function(x) all(is.na(x))))
     
-    if(length(ignore.tmp) == 1){
+    if (length(ignore.tmp) == 1) {
       message(paste0("Column ", ignore.tmp, " contains NAs only and is ignored."))
       ignoreCols <- ignore.tmp
-    } else if(length(ignore.tmp) > 1){
+    } else if (length(ignore.tmp) > 1) {
       message(paste0("Columns ", ignore.tmp, " contain NAs only and are ignored."))
       ignoreCols <- ignore.tmp
     }
@@ -301,7 +303,7 @@ renameTaxa <- function(taxtab,
   
   tax_orig <- tax
   
-  if(!is.null(ignoreCols)){
+  if (!is.null(ignoreCols)) {
     tax <- tax_orig[, -ignoreCols]
     
   } 
@@ -315,80 +317,80 @@ renameTaxa <- function(taxtab,
   
   missRanks <- missRanksAbb <- FALSE
 
-  if(is.null(ranks)){
-    if(any(ranks.tmp %in% colnames(tax))){
+  if (is.null(ranks)) {
+    if (any(ranks.tmp %in% colnames(tax))) {
       ranks <- colnames(tax)
       
-    } else{
+    } else {
       
       repl <- 0
       ranks <- rep(NA, ncol(tax))
       
-      for(r in seq_along(ranks.tmp)){
+      for (r in seq_along(ranks.tmp)) {
         sel <- grep(paste0(ranksAbb.tmp, "_")[r], t(tax)) %% nranks
         
-        if(length(sel) != 0){
+        if (length(sel) != 0) {
           sel <- sel[1]
-          if(sel == 0) sel <- nranks
+          if (sel == 0) sel <- nranks
           ranks[sel] <- ranks.tmp[r]
           repl <- repl + 1
         }
       }
       
-      if(repl != nranks){
+      if (repl != nranks) {
         missRanks <- TRUE
         
       } 
     }
     
-  } else{
-    if(length(ranks) != nranks){
+  } else {
+    if (length(ranks) != nranks) {
       stop("Length of 'ranks' does not match number of columns")
     }
   }
   
 
-  if(is.null(ranksAbb)){
-    if(missRanks){
+  if (is.null(ranksAbb)) {
+    if (missRanks) {
       missRanksAbb <- TRUE
-    } else{
+    } else {
       ranksAbb <- substr(tolower(ranks), 1, 1)
     }
     
-  } else{
-    if(length(ranksAbb) != nranks){
+  } else {
+    if (length(ranksAbb) != nranks) {
       stop("Length of 'ranksAbb' does not match number of columns")
     }
   }
   
   # Stop if full rank names are not given but needed
-  if(missRanks && (grepl("<rank>", pat) | 
-                   grepl("<Rank>", pat))){
+  if (missRanks && (grepl("<rank>", pat) | 
+                   grepl("<Rank>", pat))) {
     stop("Ranks could not be determined but are needed for the given pattern. Please provide 'ranks'")
   }
   
-  if(missRanks && (grepl("<rank>", substPat) | 
+  if (missRanks && (grepl("<rank>", substPat) | 
                   grepl("<Rank>", substPat) | 
                   grepl("<subst_rank>", substPat) | 
-                  grepl("<subst_Rank>", substPat))){
+                  grepl("<subst_Rank>", substPat))) {
     stop("Ranks could not be determined but are needed for the given substitute pattern. Please provide 'ranks'")
   }
   
   # Stop if abbreviated rank names are not given but needed
-  if(missRanksAbb && (grepl("<r>", pat) | 
-                   grepl("<R>", pat))){
+  if (missRanksAbb && (grepl("<r>", pat) | 
+                   grepl("<R>", pat))) {
     stop("Abbreviated ranks could not be determined but are needed for the given pattern. Please provide 'ranks' or 'ranksAbb'.")
   }
   
-  if(missRanksAbb && (grepl("<r>", substPat) | 
+  if (missRanksAbb && (grepl("<r>", substPat) | 
                    grepl("<R>", substPat) | 
                    grepl("<subst_r>", substPat) | 
-                   grepl("<subst_R>", substPat))){
+                   grepl("<subst_R>", substPat))) {
     stop("Ranks could not be determined but are needed for the given substitute pattern. Please provide 'ranks' or 'ranksAbb'.")
   }
   
   
-  for(r in seq_along(ranksAbb.tmp)){
+  for (r in seq_along(ranksAbb.tmp)) {
     tax <- gsub(paste0(ranksAbb.tmp[r], "__"), "", tax)
     tax <- gsub(paste0(ranksAbb.tmp[r], "_"), "", tax)
   }
@@ -400,19 +402,19 @@ renameTaxa <- function(taxtab,
   dimnames(unknownMat) <- dimnames(tax)
   
   # Add number to unclassified taxa
-  if(!is.null(unclass)){
+  if (!is.null(unclass)) {
     
-    if(numUnclass){
+    if (numUnclass) {
       # Split pattern
       pat.tmp <- unlist(strsplit(numUnclassPat, "<"))
       pat.tmp <- unlist(strsplit(pat.tmp, ">"))
       numUnclassPat <- pat.tmp
       
-      for (c in 1:nranks){
+      for (c in 1:nranks) {
         # Detect unclassified taxa
         isunclass <- tax[, c] %in% unclass
         
-        if(sum(isunclass) > 0){
+        if (sum(isunclass) > 0) {
           # Replace names according to pattern
           tmp <- matrix(rep(numUnclassPat, 
                             each = sum(isunclass)), nrow = sum(isunclass))
@@ -426,11 +428,11 @@ renameTaxa <- function(taxtab,
       }
     }
 
-  } else{
-    if(any(grepl("unclass", tax, ignore.case = TRUE))){
+  } else {
+    if (any(grepl("unclass", tax, ignore.case = TRUE))) {
       unclassname <- unique(tax[grep("unclass", tax, ignore.case = TRUE)])
       
-      if(!all(unclassname %in% unknown)){
+      if (!all(unclassname %in% unknown)) {
         unclassname <- unclassname[!unclassname %in% unknown]
         warning(paste0('Taxonomic table contains unclassified taxa. ',
                        'Consider adding "', unclassname, '" to argument "unknown".'))
@@ -439,13 +441,13 @@ renameTaxa <- function(taxtab,
   }
   
   # Replace unknowns by number
-  if(numUnknown){
-    for (c in 1:nranks){
+  if (numUnknown) {
+    for (c in 1:nranks) {
       
       # Add a number if the rank is unknown
       isunknown <- tax[, c] %in% unknown
       
-      if (sum(isunknown) > 0){
+      if (sum(isunknown) > 0) {
         tax[isunknown, c] <- 1:sum(isunknown)
         unknownMat[isunknown, c] <- TRUE
       }
@@ -453,18 +455,18 @@ renameTaxa <- function(taxtab,
   }
 
   # Make duplicates unique
-  if(!is.null(numDupli)){
+  if (!is.null(numDupli)) {
     # Split pattern
     pat.tmp <- unlist(strsplit(numDupliPat, "<"))
     pat.tmp <- unlist(strsplit(pat.tmp, ">"))
     numDupliPat <- pat.tmp
     
-    for(c in seq_along(numDupli)){
+    for (c in seq_along(numDupli)) {
       tax.tmp <- tax[, numDupli[c]]
       dupli <- table(tax.tmp)[table(tax.tmp) > 1]
       
-      if(length(dupli) > 0){
-        for(d in seq_along(dupli)){
+      if (length(dupli) > 0) {
+        for (d in seq_along(dupli)) {
           # Replace names according to pattern
           tmp <- matrix(rep(numDupliPat, each = dupli[d]), nrow = dupli[d])
           tmp[tmp == "name"] <- names(dupli[d])
@@ -488,37 +490,37 @@ renameTaxa <- function(taxtab,
   pat.tmp <- unlist(strsplit(pat.tmp, ">"))
   substPat <- pat.tmp
 
-  for(i in 1:nrow(tax)){
+  for (i in 1:nrow(tax)) {
     
-    for(r in nranks:1){
+    for (r in nranks:1) {
       name <- tax[i, r]
       isunknown <- unknownMat[i, r]
       usesubst <- NA
       
-      if(isunknown){
+      if (isunknown) {
         usesubst <- TRUE
         
         # Which ranks are known?
         knownr <- which(!unknownMat[i, ])
         
-        if(length(knownr) == 0){
+        if (length(knownr) == 0) {
           # If all ranks are unknown, take name of the highest rank
           sr <- 1
-          if(r == 1) usesubst <- FALSE
+          if (r == 1) usesubst <- FALSE
 
-        } else{
+        } else {
           # Select last known rank
           sr <- knownr[length(knownr)]
         }
         
-      } else{
+      } else {
         usesubst <- FALSE
       }
       
       # Assign the right pattern
-      if(usesubst){
+      if (usesubst) {
         patout <- substPat
-      } else{
+      } else {
         patout <- pat
       }
       
@@ -530,7 +532,7 @@ renameTaxa <- function(taxtab,
                                            substr(ranks[r], 2, nchar(ranks[r])))
       patout[patout == "name"] <- name
       
-      if(usesubst){
+      if (usesubst) {
         patout[patout == "subst_r"] <- tolower(ranksAbb[sr])
         patout[patout == "subst_R"] <- toupper(ranksAbb[sr])
         patout[patout == "subst_rank"] <- tolower(ranks[sr])
@@ -545,14 +547,14 @@ renameTaxa <- function(taxtab,
     }
   }
   
-  if(!is.null(ignoreCols)){
+  if (!is.null(ignoreCols)) {
     taxout <- tax_orig
     taxout[, (1:ncol(tax_orig))[-ignoreCols]] <- tax
-  } else{
+  } else {
     taxout <- tax
   }
   
-  if("phyloseq" %in% class(taxtab)){
+  if ("phyloseq" %in% class(taxtab)) {
     phyloseq::tax_table(taxtab) <- phyloseq::tax_table(taxout)
     taxout <- taxtab
   } 

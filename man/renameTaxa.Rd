@@ -66,20 +66,22 @@ numbers, add "unclassified" (or the appropriate counterpart) to
 \code{unknown} and set \code{unclass} to \code{NULL}.}
 
 \item{numUnclass}{logical. If \code{TRUE}, a number is assigned to all 
-unclassified taxa (defined by \code{unclass}) to make them unique.}
+unclassified taxa (defined by \code{unclass}) to make them unique. 
+The pattern is defined via \code{numUnclassPat}.}
 
 \item{numUnclassPat}{character defining the pattern used for numbering 
 unclassified taxa. Must include a space holder for the name ("<name>") and
-one for the number ("<num>"). Default is "<name><num>", resulting e.g. in
+one for the number ("<num>"). Default is "<name><num>" resulting e.g., in
 "unclassified1".}
 
-\item{numDupli}{logical indicating whether duplicates (within a rank) should
-be made unique by adding a number}
+\item{numDupli}{character vector giving the ranks that should be made unique 
+by adding a number. Elements must match column names. The pattern is 
+defined via \code{numDupliPat}.}
 
 \item{numDupliPat}{character defining the pattern used for numbering 
-duplicated names (if \code{numDupli = TRUE}). Must include a space holder 
+duplicated names (if \code{numDupli} is given). Must include a space holder 
 for the name ("<name>") and one for the number ("<num>"). 
-Default is "<name><num>", resulting e.g. in "Ruminococcus1".}
+Default is "<name><num>" resulting e.g., in "Ruminococcus1".}
 
 \item{ranks}{character vector giving rank names used for renaming the 
 taxa. If \code{NULL}, the functions tries to automatically set rank names
@@ -91,8 +93,8 @@ directly used for the place holders <r>, <subst_r>, <R>, and <subst_R>
 If \code{NULL}, the first letter of the rank names is used.}
 
 \item{ignoreCols}{numeric vector with columns to be ignored. Names remain
-unchanged for these columns. Columns containing NAs only are ignored
-automatically, if \code{ignoreCols = NULL}. 
+unchanged for these columns. Columns containing \code{NA}s are ignored 
+automatically only if \code{ignoreCols = NULL}. 
 Note: length of \code{ranks} and \code{ranksAbb} must 
 match the number of non-ignored columns.}
 }
@@ -105,8 +107,8 @@ Function for renaming taxa in a taxonomic table, which can be
   given as matrix or phyloseq object. \cr\cr
   It comes with functionality for making unknown 
   and unclassified taxa unique and substituting them by the next higher known
-  taxonomic level, e.g., an unknown genus "g__" is renamed to 
-  "1_Streptococcaceae(F)".
+  taxonomic level, e.g., an unknown genus "g__" can automatically be renamed 
+  to "1_Streptococcaceae(F)".
   User-defined patterns determine the format of known and substituted names. 
   Unknown names (e.g., NAs) and unclassified taxa can be 
   handled separately. Duplicated names within one or more chosen ranks can 
