@@ -107,22 +107,24 @@ editLabels <- function(x,
                        labelPattern = NULL,
                        addBrack = TRUE,
                        charToRm = NULL,
-                       verbose = TRUE){
+                       verbose = TRUE) {
   labels <- x
   
   shortenLabels <- match.arg(shortenLabels)
   
   stopifnot(is.numeric(labelLength) & labelLength >= 0)
 
-  if(is.null(labelPattern)){
+  # Define label pattern
+  if (is.null(labelPattern)) {
     labelPattern <- c(4, "'", 3, "'", 3)
-  } else{
+  } else {
     stopifnot(length(labelPattern) %in% c(3, 5))
   }
 
-  if(shortenLabels == "intelligent"){
+  # Intelligent approach
+  if (shortenLabels == "intelligent") {
 
-    for(char in charToRm){
+    for (char in charToRm) {
       labels <- gsub(char, "", labels)
     }
 
@@ -132,7 +134,7 @@ editLabels <- function(x,
     dupli <- which(duplicated(shortlabels))
 
     # find duplicates in variable names
-    while(length(dupli) > 0){
+    while(length(dupli) > 0) {
       lpat <- length(labelPattern)
       
       ind <- which(shortlabels == shortlabels[dupli[1]])
@@ -141,9 +143,9 @@ editLabels <- function(x,
       # Make length of duplicate names equal
       lvec <- unlist(lapply(dupnames, length))
       l <- max(lvec)
-      if(min(lvec) != max(lvec)){
-        for(i in 1:length(dupnames)){
-          if(lvec[i] < l){
+      if (min(lvec) != max(lvec)) {
+        for (i in 1:length(dupnames)) {
+          if (lvec[i] < l) {
             dupnames[[i]] <- c(dupnames[[i]], rep(" ", l-lvec[i]))
           }
         }
@@ -152,38 +154,38 @@ editLabels <- function(x,
       pos <- first_unequal_element(dupnames)
       first_unequal <- pos$first_unequal
       all_unequal <- pos$all_unequal
-      if(first_unequal == all_unequal) lpat <- 3
+      if (first_unequal == all_unequal) lpat <- 3
       
       cut1 <- as.numeric(labelPattern[1])
       cut2 <- as.numeric(labelPattern[3])
       cut2 <- min(cut2, l - first_unequal + 1)
       
-      if(lpat == 5){
+      if (lpat == 5) {
         cut3 <- as.numeric(labelPattern[5])
         cut3 <- min(cut3, l - all_unequal + 1)
-      } else{
+      } else {
         cut3 <- 0
       }
 
       
-      if(first_unequal > length(dupnames[[1]])){
+      if (first_unequal > length(dupnames[[1]])) {
         shortlabels[ind] <- substring(labels[ind], 1, cut1)
 
-      } else{
-        for(k in 1:length(dupnames)){
+      } else {
+        for (k in 1:length(dupnames)) {
           str1 <- paste(dupnames[[k]][1:cut1], collapse = "")
           str2 <- labelPattern[2]
           str3 <- paste(dupnames[[k]][first_unequal:(first_unequal+cut2-1)], collapse = "")
           
-          if(lpat == 5){
+          if (lpat == 5) {
             str4 <- labelPattern[4]
             str5 <- paste(dupnames[[k]][all_unequal:(all_unequal+cut3-1)], collapse = "")
           }
           
-          if(addBrack){
+          if (addBrack) {
             # Add "]" if str1 contains "["
-            if(grepl("\\[", str1)){
-              if(grep("\\]", dupnames[[k]]) < first_unequal){
+            if (grepl("\\[", str1)) {
+              if (grep("\\]", dupnames[[k]]) < first_unequal) {
                 str1 <- paste0(str1, "]")
               }
             }
@@ -192,22 +194,22 @@ editLabels <- function(x,
           # Ignore str3 if empty
           str3spl <- strsplit(str3, "")[[1]]
           
-          if(all(grepl(" ", str3spl))){
+          if (all(grepl(" ", str3spl))) {
             shortlabels[ind[k]] <- str1
             
-          } else{
-            if(lpat == 5){
+          } else {
+            if (lpat == 5) {
               
               # Ignore str5 if empty
               str5spl <- strsplit(str5, "")[[1]]
               
-              if(!all(grepl(" ", str5spl))){
+              if (!all(grepl(" ", str5spl))) {
                 shortlabels[ind[k]] <- paste0(str1, str2, str3, str4, str5)
-              } else{
+              } else {
                 shortlabels[ind[k]] <- paste0(str1, str2, str3)
               }
               
-            } else{
+            } else {
               shortlabels[ind[k]] <- paste0(str1, str2, str3)
             }
           }
@@ -218,24 +220,26 @@ editLabels <- function(x,
       dupli <- dupli[!dupli %in% ind]
     }
     
-    if(any(duplicated(shortlabels)) & verbose){
+    if (any(duplicated(shortlabels)) & verbose) {
       message("Shortened labels could not be made unique.")
     }
 
     labels <- shortlabels
 
-  } else if(shortenLabels == "simple"){
+    # Simple approach
+  } else if (shortenLabels == "simple") {
 
-    for(char in charToRm){
+    for (char in charToRm) {
       labels <- gsub(char, "", labels)
     }
 
     labels[labels == ""] <- "-"
     labels <- substr(labels, 1, labelLength)
     
-  } else if(!is.null(charToRm)){
+    # Only unwanted characters removed, no shortening
+  } else if (!is.null(charToRm)) {
 
-    for(char in charToRm){
+    for (char in charToRm) {
       labels <- gsub(char, "", labels)
     }
 
